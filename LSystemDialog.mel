@@ -1,0 +1,181 @@
+global string $textbox;
+global string $iterSlider;
+global string $stepSlider;
+global string $angleSlider;
+global int $currNum = 1;
+
+global proc makeWindow() {
+    global string $textbox;
+    global string $iterSlider;
+    global string $stepSlider;
+    global string $angleSlider;
+
+    string $window = `window -title "Call LSystem Command"`;
+    	paneLayout -configuration "horizontal2";
+    	frameLayout -labelVisible false -marginHeight 5 -marginWidth 5 -collapsable false -borderVisible false;
+    		rowLayout -numberOfColumns 3 -adjustableColumn 2 -columnAlign3 "left" "center" "right";
+    			text -label "Browse for grammar files or write your own below" -align "left";
+    			text -label "";
+    			button -label "Browse" -command "showFileDialog";
+    		setParent ..;
+
+    		frameLayout -labelVisible false -collapsable false -borderVisible false;
+    			$textbox = `scrollField -wordWrap false`;
+    		setParent ..;
+
+    		frameLayout -label "LSystem Parameters" -collapsable true -backgroundShade true -borderVisible false;
+    			columnLayout;
+    				$iterSlider = `intSliderGrp -label "Time / Iterations" -min 1 -max 10 -value 1 -field true`;
+    				$stepSlider = `floatSliderGrp -label "Default Step Size" -min 1.0 -max 10.0 -value 1.0 -field true`;
+    				$angleSlider = `floatSliderGrp -label "Default Angle" -min 0 -max 360 -value 22.5 -field true`;
+    			setParent ..;
+    		setParent ..;
+
+    		rowLayout -numberOfColumns 6 -adjustableColumn 4 -columnAlign3 "left" "center" "right";
+    			columnLayout;
+    				button -label "Create L-System" -command "onCreate";
+    			setParent ..;
+    			text -label "";
+    			columnLayout;
+    				button -label "Create Dynamic L-System" -command "onDynamicCreate";
+    			setParent ..;
+    			text -label "";
+    			columnLayout;
+    				button -label "Clear" -command "onClear";
+    			setParent ..;
+    			columnLayout;
+    				button -label "Cancel" -command ("deleteUI -window " + $window);
+    			setParent ..;
+    		setParent ..;
+    	setParent ..;
+    showWindow $window;
+}
+makeWindow();
+
+
+global proc printConfirmations(string $tx, int $iterV, float $stepV, float $angleV) 
+{
+    print("The grammar: \n" + $tx + "\n");
+    print("Iterations: " + $iterV + "\n");
+    print("Step Size: " + $stepV + "\n");
+    print("Angle: " + $angleV + "\n");
+    print("\n");
+}
+
+global proc onCreate()
+{
+    global string $textbox;
+    global string $iterSlider;
+    global string $stepSlider;
+    global string $angleSlider;
+    global int $currNum;
+
+    string $tx = `scrollField -q -tx $textbox`;
+    int $iterV = `intSliderGrp -q -v $iterSlider`;
+    float $stepV = `floatSliderGrp -q -v $stepSlider`;
+    float $angleV = `floatSliderGrp -q -v $angleSlider`;
+
+    print("Running LSystemCmd with the following inputs:");
+    printConfirmations($tx, $iterV, $stepV, $angleV);
+
+    // Call cmd
+    LSystemCmd -grammar $tx -iterations $iterV -step $stepV -angle $angleV -id $currNum;
+
+    $currNum = $currNum + 1;
+}
+
+global proc onStaticMesh(string $m) {
+    global int $currNum;
+
+    // Set up names
+    string $lSysName = "LSystem" + $currNum;
+    string $shapeName = "LSystemShape" + $currNum;
+
+    // Set up nodes
+    createNode transform -n $lSysName;
+    string $currShape = `createNode mesh -n $shapeName -p $lSysName`;
+    sets -add initialShadingGroup $currShape;
+    setAttr ($currShape + ".inMesh") -type mesh $m;
+
+    $currNum = $currNum + 1;
+}
+
+global proc onDynamicCreate()
+{
+    global string $textbox;
+    global string $iterSlider;
+    global string $stepSlider;
+    global string $angleSlider;
+    global int $currNum;
+
+    string $tx = `scrollField -q -tx $textbox`;
+    int $iterV = `intSliderGrp -q -v $iterSlider`;
+    float $stepV = `floatSliderGrp -q -v $stepSlider`;
+    float $angleV = `floatSliderGrp -q -v $angleSlider`;
+
+    print("Creating a dynamic LSystem with the following inputs:");
+    printConfirmations($tx, $iterV, $stepV, $angleV);
+
+    // Set up names
+    string $lSysName = "LSystem" + $currNum;
+    string $shapeName = "LSystemShape" + $currNum;
+    string $nodeName = "LSystemNode" + $currNum;
+
+    createNode transform -n $lSysName;
+    string $currShape = `createNode mesh -n $shapeName -p $lSysName`;
+    sets -add initialShadingGroup $currShape;
+
+    // Adding the dynamic node
+    string $currNode = `createNode LSystemNode -n $nodeName`;
+    setAttr ($currNode + ".step") $stepV;
+    setAttr ($currNode + ".angle") $angleV;
+    setAttr ($currNode + ".time") $iterV;
+    setAttr ($currNode + ".grammar") -type "string" $tx;
+
+    connectAttr ($currNode + ".outputMesh") ($currShape + ".inMesh");
+
+    $currNum = $currNum + 1;
+}
+
+global proc changeText(string $grammar)
+{
+    global string $textbox;
+    print($grammar + "\n\n");
+
+    scrollField -e -tx $grammar $textbox;
+}
+
+global proc getFileData(string $parent, string $selectedFile)
+{
+    $file = `fopen $selectedFile "r"`;
+	print("Loading grammar from file:\n");
+	print($selectedFile + "\n");
+
+    string $grammar = `fread $file $grammar`;
+    changeText($grammar);
+}
+
+global proc onDialogCreate(string $parent) {}
+
+global proc showFileDialog()
+{
+	fileDialog2 
+	-fileFilter "*.txt" -dialogStyle 2 -fileMode 1 
+	-optionsUICreate "onDialogCreate" 
+	-optionsUICommit2 "getFileData";
+}
+
+global proc onClear() {
+    // Reset the scene
+    print("Scene reset button pressed...\n");
+
+    string $result = `confirmDialog -title "Clear Scene" 
+        -message "Clear and reset entire scene?"
+        -button "Yes" -button "No" 
+        -cancelButton "No"-defaultButton "No"`;
+
+    if ($result == "Yes") {
+        file -f -new;
+        print("Scene Reset\n");
+    } else warning "Reset cancelled: scene preserved\n";
+}
