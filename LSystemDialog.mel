@@ -1,14 +1,14 @@
-global string $textbox;
-global string $iterSlider;
-global string $stepSlider;
-global string $angleSlider;
-global int $currNum = 1;
+global string $textbox_LS;
+global string $iterSlider_LS;
+global string $stepSlider_LS;
+global string $angleSlider_LS;
+global int $currNum_LS = 1;
 
 global proc makeWindow() {
-    global string $textbox;
-    global string $iterSlider;
-    global string $stepSlider;
-    global string $angleSlider;
+    global string $textbox_LS;
+    global string $iterSlider_LS;
+    global string $stepSlider_LS;
+    global string $angleSlider_LS;
 
     string $window = `window -title "Call LSystem Command"`;
     	paneLayout -configuration "horizontal2";
@@ -20,14 +20,14 @@ global proc makeWindow() {
     		setParent ..;
 
     		frameLayout -labelVisible false -collapsable false -borderVisible false;
-    			$textbox = `scrollField -wordWrap false`;
+    			$textbox_LS = `scrollField -wordWrap false`;
     		setParent ..;
 
     		frameLayout -label "LSystem Parameters" -collapsable true -backgroundShade true -borderVisible false;
     			columnLayout;
-    				$iterSlider = `intSliderGrp -label "Time / Iterations" -min 1 -max 10 -value 1 -field true`;
-    				$stepSlider = `floatSliderGrp -label "Default Step Size" -min 1.0 -max 10.0 -value 1.0 -field true`;
-    				$angleSlider = `floatSliderGrp -label "Default Angle" -min 0 -max 360 -value 22.5 -field true`;
+    				$iterSlider_LS = `intSliderGrp -label "Time / Iterations" -min 1 -max 10 -value 1 -field true`;
+    				$stepSlider_LS = `floatSliderGrp -label "Default Step Size" -min 1.0 -max 10.0 -value 1.0 -field true`;
+    				$angleSlider_LS = `floatSliderGrp -label "Default Angle" -min 0 -max 360 -value 22.5 -field true`;
     			setParent ..;
     		setParent ..;
 
@@ -64,32 +64,32 @@ global proc printConfirmations(string $tx, int $iterV, float $stepV, float $angl
 
 global proc onCreate()
 {
-    global string $textbox;
-    global string $iterSlider;
-    global string $stepSlider;
-    global string $angleSlider;
-    global int $currNum;
+    global string $textbox_LS;
+    global string $iterSlider_LS;
+    global string $stepSlider_LS;
+    global string $angleSlider_LS;
+    global int $currNum_LS;
 
-    string $tx = `scrollField -q -tx $textbox`;
-    int $iterV = `intSliderGrp -q -v $iterSlider`;
-    float $stepV = `floatSliderGrp -q -v $stepSlider`;
-    float $angleV = `floatSliderGrp -q -v $angleSlider`;
+    string $tx = `scrollField -q -tx $textbox_LS`;
+    int $iterV = `intSliderGrp -q -v $iterSlider_LS`;
+    float $stepV = `floatSliderGrp -q -v $stepSlider_LS`;
+    float $angleV = `floatSliderGrp -q -v $angleSlider_LS`;
 
     print("Running LSystemCmd with the following inputs:");
     printConfirmations($tx, $iterV, $stepV, $angleV);
 
     // Call cmd
-    LSystemCmd -grammar $tx -iterations $iterV -step $stepV -angle $angleV -id $currNum;
+    LSystemCmd -grammar $tx -iterations $iterV -step $stepV -angle $angleV -id $currNum_LS;
 
-    $currNum = $currNum + 1;
+    $currNum_LS = $currNum_LS + 1;
 }
 
 global proc onStaticMesh(string $m) {
-    global int $currNum;
+    global int $currNum_LS;
 
     // Set up names
-    string $lSysName = "LSystem" + $currNum;
-    string $shapeName = "LSystemShape" + $currNum;
+    string $lSysName = "LSystem" + $currNum_LS;
+    string $shapeName = "LSystemShape" + $currNum_LS;
 
     // Set up nodes
     createNode transform -n $lSysName;
@@ -97,29 +97,29 @@ global proc onStaticMesh(string $m) {
     sets -add initialShadingGroup $currShape;
     setAttr ($currShape + ".inMesh") -type mesh $m;
 
-    $currNum = $currNum + 1;
+    $currNum_LS = $currNum_LS + 1;
 }
 
 global proc onDynamicCreate()
 {
-    global string $textbox;
-    global string $iterSlider;
-    global string $stepSlider;
-    global string $angleSlider;
-    global int $currNum;
+    global string $textbox_LS;
+    global string $iterSlider_LS;
+    global string $stepSlider_LS;
+    global string $angleSlider_LS;
+    global int $currNum_LS;
 
-    string $tx = `scrollField -q -tx $textbox`;
-    int $iterV = `intSliderGrp -q -v $iterSlider`;
-    float $stepV = `floatSliderGrp -q -v $stepSlider`;
-    float $angleV = `floatSliderGrp -q -v $angleSlider`;
+    string $tx = `scrollField -q -tx $textbox_LS`;
+    int $iterV = `intSliderGrp -q -v $iterSlider_LS`;
+    float $stepV = `floatSliderGrp -q -v $stepSlider_LS`;
+    float $angleV = `floatSliderGrp -q -v $angleSlider_LS`;
 
     print("Creating a dynamic LSystem with the following inputs:");
     printConfirmations($tx, $iterV, $stepV, $angleV);
 
     // Set up names
-    string $lSysName = "LSystem" + $currNum;
-    string $shapeName = "LSystemShape" + $currNum;
-    string $nodeName = "LSystemNode" + $currNum;
+    string $lSysName = "LSystem" + $currNum_LS;
+    string $shapeName = "LSystemShape" + $currNum_LS;
+    string $nodeName = "LSystemNode" + $currNum_LS;
 
     createNode transform -n $lSysName;
     string $currShape = `createNode mesh -n $shapeName -p $lSysName`;
@@ -134,15 +134,15 @@ global proc onDynamicCreate()
 
     connectAttr ($currNode + ".outputMesh") ($currShape + ".inMesh");
 
-    $currNum = $currNum + 1;
+    $currNum_LS = $currNum_LS + 1;
 }
 
 global proc changeText(string $grammar)
 {
-    global string $textbox;
+    global string $textbox_LS;
     print($grammar + "\n\n");
 
-    scrollField -e -tx $grammar $textbox;
+    scrollField -e -tx $grammar $textbox_LS;
 }
 
 global proc getFileData(string $parent, string $selectedFile)
